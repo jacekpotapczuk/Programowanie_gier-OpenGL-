@@ -1,12 +1,14 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glut.h"
 #include "imgui/imgui_impl_opengl2.h"
-#include <iostream>
+
 #include <GL/freeglut.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
+
 #include <ball.h>
 
+#include <iostream>
 
 void imgui_display();
 void display();
@@ -70,7 +72,7 @@ void display()
 
 int main(int argc, char** argv)
 {
-    // Create GLUT window
+    // Create GLUT window,
     glutInit(&argc, argv);
     glutInitContextVersion(2, 1); // open gl version
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);  

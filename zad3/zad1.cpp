@@ -6,6 +6,8 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
+#include <ball.h>
+
 #include <iostream>
 
 void imgui_display();
@@ -13,13 +15,26 @@ void display();
 void reshape(int, int);
 void timer(int);
 
+std::vector<Ball> balls;
 
 void imgui_display()
 {
     {
         ImGui::Begin("Info");     
-        ImGui::Text("Program");           
-
+        ImGui::Text("Kulki:");           
+            
+        for (int i = 0; i < balls.size(); i++) {
+            ImGui::Text(balls[i].name.c_str()); ImGui::SameLine();
+            ImGui::Text(": "); ImGui::SameLine();
+            ImGui::Text("m: %.2f", balls[i].m); ImGui::SameLine();
+            ImGui::Text("r: %.2f", balls[i].r); ImGui::SameLine();
+            ImGui::Text(" vx: %.2f", balls[i].xv); ImGui::SameLine();
+            ImGui::Text(" vy: %.2f", balls[i].yv); 
+        }
+        ImGui::Text("Kolor kulki oznacza mase.");
+        ImGui::Text("Czarna kulka = max masa, biala kulka = min masa.");
+        ImGui::Text("m - masa, r - promien");
+        ImGui::Text("xv - predkosc x, yv - predkosc y");
 
         ImGui::Text("Aktualnie: %.1f FPS", ImGui::GetIO().Framerate);
         ImGui::End();
@@ -41,11 +56,14 @@ void display()
     //glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 
     glClear(GL_COLOR_BUFFER_BIT);  // frame buffer flag
-    glClearColor(0.0, 0.0, 0.0, 1.0);
+    glClearColor(0.2, 0.75, 0.92, 1.0);
+
     glLoadIdentity();  //  clears any transformations of current matrix (in this place its modelview) 
 
     
-
+    for (int i = 0; i < balls.size(); i++) {
+        balls[i].draw();
+    }
 
     ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
     glutSwapBuffers();
@@ -60,7 +78,7 @@ int main(int argc, char** argv)
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);  
     glutInitWindowPosition(500, 200);
     glutInitWindowSize(720, 720);
-    glutCreateWindow("Programowanie gier - zad 4 - kostka");
+    glutCreateWindow("Programowanie gier - zad 3 - kulki");
 
 
     // specify callback functions
@@ -80,6 +98,12 @@ int main(int argc, char** argv)
     ImGui_ImplGLUT_Init();
     ImGui_ImplGLUT_InstallFuncs();
     ImGui_ImplOpenGL2_Init();
+
+    // setup starting balls
+    balls.push_back(Ball("Ball 0", 0.0, 0.0, 1.0, 6.5, -0.015, 0.05));
+    balls.push_back(Ball("Ball 1", -5.0, -5.0, 2.1, 2.5, 0.35, 0.35));
+    balls.push_back(Ball("Ball 2", 5.0, -5.0, 0.4, 1.0, 0.0, -0.55));
+    balls.push_back(Ball("Ball 3", 5.0, 5.0, 2.5, 9.99, 0.0, 0.0));
 
 
 
@@ -117,6 +141,14 @@ void timer(int)
     glutPostRedisplay();  // call display function
     glutTimerFunc(1000 / 60, timer, 0);  // calls itself to keep 60 FPS
 
+    for (int i = 0; i < balls.size(); i++) {
+        balls[i].update(-10.0, 10.0, -10.0, 10.0);
+    }
 
+    for (int i = 0; i < balls.size() - 1; i++) {
+        for (int j = i + 1; j < balls.size(); j++) {
+            Ball::resolve_potential_collision(&balls[i], &balls[j]);
+        }
+    }
 }
 

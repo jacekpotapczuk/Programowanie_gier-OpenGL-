@@ -78,9 +78,9 @@ bool ImGui_ImplGLUT_Init()
 void ImGui_ImplGLUT_InstallFuncs()
 {
     //glutReshapeFunc(ImGui_ImplGLUT_ReshapeFunc);
-    //glutMotionFunc(ImGui_ImplGLUT_MotionFunc);
+    glutMotionFunc(ImGui_ImplGLUT_MotionFunc);
     glutPassiveMotionFunc(ImGui_ImplGLUT_MotionFunc);
-    //glutMouseFunc(ImGui_ImplGLUT_MouseFunc);
+    glutMouseFunc(ImGui_ImplGLUT_MouseFunc);
 #ifdef __FREEGLUT_EXT_H__
     glutMouseWheelFunc(ImGui_ImplGLUT_MouseWheelFunc);
 #endif

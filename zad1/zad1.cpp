@@ -14,46 +14,22 @@ void reshape(int, int);
 void timer(int);
 void mouse(int, int, int, int);
 void mouse_active_motion(int, int);
+bool LoadBitmapTex(LPCWSTR szFileName, GLuint& texid);
 
 
-static float camera_translation[] = { 0.0, 15.0, 12.0 };
-static float camera_rotation[] = { 40.0, 0.0, 0.0 };
-static bool rotation_bool[] = { false, false, false};
+static float camera_translation[] = { 0.0, 0.0, 0.0};
+static float camera_rotation[] = { 0.0, 0.0, 0.0 };
 
 
-// poczatkowo nie wiedzialem ze w imgui mozna latwo zmienic kolor, dlatego swiatla mialy byc ustalone sztywno na czew, ziel, nieb,
-// dlatego nazwy zmiennych pochodza od r,g,b, a nie sa nazwane ogolniej
+static float cube_translation[] = { 0.0, 0.0, 0.0 };
+static float cube_rotation[] = { 0.0, 0.0, 0.0 };
+static bool cube_rotation_bool[] = { false, false, false };
+static float cube_rotation_speed = 1.0;
+static float cube_scale[] = { 1.0, 1.0, 1.0 };
 
-GLfloat lightColor0[] = { 1.0f, 0.0f, 0.0f, 1.0f };
-float redSpotAngle = 30.0;
-float redSpotExponent = 20.0;
-float redSpotDirection[] = { 0.0, -1.0, 0.0 };
-float redSpotPos[] = { 0.0, 7.0, 0.0, 1.0 };
-bool redSpotEnabled = true;
-bool redSpotAutoMove = true;
-bool redSpotLockOnCenter = true;
-float redT = 0.0;
 
-GLfloat lightColor1[] = { 0.0f, 1.0f, 0.0f, 1.0f };
-float greenSpotAngle = 30.0;
-float greenSpotExponent = 20.0;
-float greenSpotDirection[] = { 0.0, -1.0, 0.0 };
-float greenSpotPos[] = { 0.0, 7.0, 0.0, 1.0 };
-bool greenSpotEnabled = true;
-bool greenSpotAutoMove = true;
-bool greenSpotLockOnCenter = true;
-float greenT = 0.5;
-
-GLfloat lightColor2[] = { 0.0f, 0.0f, 1.0f, 1.0f };
-float blueSpotAngle = 30.0;
-float blueSpotExponent = 20.0;
-float blueSpotDirection[] = { 0.0, -1.0, 0.0 };
-float blueSpotPos[] = { 0.0, 7.0, 0.0, 1.0 };
-bool blueSpotEnabled = true;
-bool blueSpotAutoMove = true;
-bool blueSpotLockOnCenter = true;
-float blueT = 1.66;
-
+GLuint cube_texture;
+GLuint triangle_texture;
 
 void imgui_display()
 {
@@ -61,41 +37,22 @@ void imgui_display()
         ImGui::Begin("Sterowanie");   
 
         ImGui::Text("Kamera:");
-        ImGui::SliderFloat3("translacja", camera_translation, -40.0, 40.0);
-        ImGui::SliderFloat3("rotacja", camera_rotation, 0, 360.0);
+        ImGui::SliderFloat3("translacjaK", camera_translation, -40.0, 40.0);
+        ImGui::SliderFloat3("rotacjaK", camera_rotation, 0, 360.0);
 
         ImGui::Separator();
-        ImGui::Text("Swiatlo 1:");
-        ImGui::Checkbox("wlacz 1", &redSpotEnabled);
-        ImGui::ColorEdit3("kolor 1", lightColor0);
-        ImGui::Checkbox("autmatyczne obracanie 1", &redSpotAutoMove);
-        ImGui::Checkbox("skierowane na srodek 1", &redSpotLockOnCenter);
-        ImGui::SliderFloat4("spotPosition 1", redSpotPos, -20.0, 20.0);
-        ImGui::SliderFloat3("spotDirection 1", redSpotDirection, -1.0, 1.0);
-        ImGui::SliderFloat("spotAngle 1", &redSpotAngle, 0.0, 90.0);
-        ImGui::SliderFloat("spotExponent 1", &redSpotExponent, 0.0, 100.0);
+        ImGui::Text("Kostka:");
+        ImGui::SliderFloat3("translacjaC", cube_translation, -40.0, 40.0);
+        ImGui::SliderFloat3("rotacjaC", cube_rotation, 0, 360.0);
+        ImGui::SliderFloat3("cube_scaleC", cube_scale, 0.1, 5.0);
+        ImGui::Checkbox("x", &cube_rotation_bool[0]);
+        ImGui::SameLine();
+        ImGui::Checkbox("y", &cube_rotation_bool[1]);
+        ImGui::SameLine();
+        ImGui::Checkbox("z", &cube_rotation_bool[2]);
+        ImGui::SameLine();
+        ImGui::SliderFloat("auto obrot ", &cube_rotation_speed, 0.5f, 5.0f);
 
-        ImGui::Separator();
-        ImGui::Text("Swiatlo 2:");
-        ImGui::Checkbox("wlacz 2", &greenSpotEnabled);
-        ImGui::ColorEdit3("kolor 2", lightColor1);
-        ImGui::Checkbox("autmatyczne obracanie 2", &greenSpotAutoMove);
-        ImGui::Checkbox("skierowane na srodek 2", &greenSpotLockOnCenter);
-        ImGui::SliderFloat4("spotPosition 2", greenSpotPos, -20.0, 20.0);
-        ImGui::SliderFloat3("spotDirection 2", greenSpotDirection, -1.0, 1.0);
-        ImGui::SliderFloat("spotAngle 2", &greenSpotAngle, 0.0, 90.0);
-        ImGui::SliderFloat("spotExponent 2", &greenSpotExponent, 0.0, 100.0);
-
-        ImGui::Separator();
-        ImGui::Text("Swiatlo 3:");
-        ImGui::Checkbox("wlacz 3", &blueSpotEnabled);
-        ImGui::ColorEdit3("kolor 3", lightColor2);
-        ImGui::Checkbox("autmatyczne obracanie 3", &blueSpotAutoMove);
-        ImGui::Checkbox("skierowane na srodek 3", &blueSpotLockOnCenter);
-        ImGui::SliderFloat4("spotPosition 3", blueSpotPos, -20.0, 20.0);
-        ImGui::SliderFloat3("spotDirection 3", blueSpotDirection, -1.0, 1.0);
-        ImGui::SliderFloat("spotAngle 3", &blueSpotAngle, 0.0, 90.0);
-        ImGui::SliderFloat("spotExponent 3", &blueSpotExponent, 0.0, 100.0);
 
         ImGui::Separator();
         ImGui::Text("Aktualnie: %.1f FPS", ImGui::GetIO().Framerate);
@@ -105,7 +62,6 @@ void imgui_display()
 
 void display()
 {
-    glEnable(GL_LIGHTING);
     // Start ImGui frame
     ImGui_ImplOpenGL2_NewFrame();
     ImGui_ImplGLUT_NewFrame();
@@ -123,16 +79,6 @@ void display()
     glLoadIdentity();  //  clears any transformations of current matrix (in this place its modelview) 
 
 
-        // ambient light
-    //GLfloat ambientColor[] = { 0.2f, 0.2f, 0.2f, 1.0f };
-    //glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientColor);
-
-    //GLfloat lightColor0[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    //GLfloat lightPos0[] = { light_direction[0], light_direction[1], light_direction[2], 0.0f };
-    //glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor0);
-    //glLightfv(GL_LIGHT0, GL_POSITION, lightPos0);
-
-
     //  camera position and rotation
     glTranslatef(-camera_translation[0], -camera_translation[1], -camera_translation[2]);
 
@@ -141,92 +87,59 @@ void display()
     glRotatef(camera_rotation[2], 0.0, 0.0, 1.0);
 
 
+    glTranslatef(0.0, 0.0, -20.0); // move every object away from camera
 
-
-    glTranslatef(0.0, -2.0, -20.0); // move every object away from camera
-
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor0);
-    glLightfv(GL_LIGHT0, GL_POSITION, redSpotPos);
-    glLightfv(GL_LIGHT0, GL_SPOT_CUTOFF, &redSpotAngle);
-    glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, redSpotDirection);
-    glLightfv(GL_LIGHT0, GL_SPOT_EXPONENT, &redSpotExponent);
-    
-    glLightfv(GL_LIGHT1, GL_DIFFUSE, lightColor1);
-    glLightfv(GL_LIGHT1, GL_POSITION, greenSpotPos);
-    glLightfv(GL_LIGHT1, GL_SPOT_CUTOFF, &greenSpotAngle);
-    glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, greenSpotDirection);
-    glLightfv(GL_LIGHT1, GL_SPOT_EXPONENT, &greenSpotExponent);
-
-    glLightfv(GL_LIGHT2, GL_DIFFUSE, lightColor2);
-    glLightfv(GL_LIGHT2, GL_POSITION, blueSpotPos);
-    glLightfv(GL_LIGHT2, GL_SPOT_CUTOFF, &blueSpotAngle);
-    glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, blueSpotDirection);
-    glLightfv(GL_LIGHT2, GL_SPOT_EXPONENT, &blueSpotExponent);
-
-    GLfloat materialColor3[] = { 0.8f, 0.8f, 0.8f, 1.0f };
-    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, materialColor3);
-
-    float tileSize = 0.1;
-    glBegin(GL_QUADS);
-    for (int x = -200; x < 200; x++)
-    {
-        for (int z = -200; z < 200; z++)
-        {
-            glNormal3f(0.0f, 1.0f, 0.0f);
-            glVertex3f(x * tileSize, 0, z * tileSize);
-            glVertex3f(x * tileSize, 0, z * tileSize + tileSize * 2);
-            glVertex3f(x * tileSize + tileSize * 2, 0, z * tileSize + tileSize * 2);
-            glVertex3f(x * tileSize + tileSize * 2, 0, z * tileSize);
-        }
-    }
+    glBindTexture(GL_TEXTURE_2D, triangle_texture);
+    glBegin(GL_TRIANGLES);
+    glTexCoord2f(0.25, 0.75); glVertex3f(-8.0, 3.0, 0.0);
+    glTexCoord2f(0.25, 0.25); glVertex3f(-8.0, 0.0, 0.0);
+    glTexCoord2f(0.75, 0.25); glVertex3f(-5.0, 0.0, 0.0);
     glEnd();
+    
+    glTranslatef(cube_translation[0], cube_translation[1], cube_translation[2]);
+    glRotatef(cube_rotation[0], 1.0, 0.0, 0.0);
+    glRotatef(cube_rotation[1], 0.0, 1.0, 0.0);
+    glRotatef(cube_rotation[2], 0.0, 0.0, 1.0);
+    glScalef(cube_scale[0], cube_scale[1], cube_scale[2]);
 
-    GLfloat materialColor[] = { 0.6f, 0.2f, 0.0f, 1.0f };
-    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, materialColor);
+    
+    {
+        glBindTexture(GL_TEXTURE_2D, cube_texture);
+        glBegin(GL_QUADS);
+        //front
+        glTexCoord2f(0, 1); glVertex3f(-1.0, 1.0, 1.0);
+        glTexCoord2f(0, 0.66667); glVertex3f(-1.0, -1.0, 1.0);
+        glTexCoord2f(0.5, 0.66667); glVertex3f(1.0, -1.0, 1.0);
+        glTexCoord2f(0.5, 1); glVertex3f(1.0, 1.0, 1.0);
+        ////back
+        glTexCoord2f(0, 0.33334); glVertex3f(1.0, 1.0, -1.0);
+        glTexCoord2f(0, 0); glVertex3f(1.0, -1.0, -1.0);
+        glTexCoord2f(0.5, 0); glVertex3f(-1.0, -1.0, -1.0);
+        glTexCoord2f(0.5, 0.33334); glVertex3f(-1.0, 1.0, -1.0);
+        //right
+        glTexCoord2f(0.5, 1); glVertex3f(1.0, 1.0, 1.0);
+        glTexCoord2f(0.5, 0.66667); glVertex3f(1.0, -1.0, 1.0);
+        glTexCoord2f(1.0, 0.66667); glVertex3f(1.0, -1.0, -1.0);
+        glTexCoord2f(1.0, 1.0); glVertex3f(1.0, 1.0, -1.0);
+        //left
+        glTexCoord2f(0.0, 0.66667); glVertex3f(-1.0, 1.0, -1.0);
+        glTexCoord2f(0.0, 0.33334); glVertex3f(-1.0, -1.0, -1.0);
+        glTexCoord2f(0.5, 0.33334); glVertex3f(-1.0, -1.0, 1.0);
+        glTexCoord2f(0.5, 0.66667); glVertex3f(-1.0, 1.0, 1.0);
+        ////top
+        glTexCoord2f(0.5, 0.66667); glVertex3f(-1.0, 1.0, -1.0);
+        glTexCoord2f(0.5, 0.33334); glVertex3f(-1.0, 1.0, 1.0);
+        glTexCoord2f(1.0, 0.33334); glVertex3f(1.0, 1.0, 1.0);
+        glTexCoord2f(1.0, 0.66667); glVertex3f(1.0, 1.0, -1.0);
+        ////bottom
+        glTexCoord2f(0.5, 0.33334); glVertex3f(-1.0, -1.0, -1.0);
+        glTexCoord2f(0.5, 0.0); glVertex3f(-1.0, -1.0, 1.0);
+        glTexCoord2f(1.0, 0.0); glVertex3f(1.0, -1.0, 1.0);
+        glTexCoord2f(1.0, 0.33334); glVertex3f(1.0, -1.0, -1.0);
 
-    glTranslatef(5.0, 0.0, 0.0);
-    glRotatef(-90.0, 1.0, 0.0, 0.0);
-    glutSolidCone(3.0, 5.0, 100, 100);
-    glRotatef(90.0, 1.0, 0.0, 0.0);
-    glTranslatef(-5.0, 0.0, 0.0);
+        glEnd();
+    } 
 
-    GLfloat materialColor2[] = { 0.6f, 1.0f, 0.3f, 1.0f };
-    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, materialColor2);
-
-
-    glTranslatef(-5.0, 1.0, 0.0);
-    glRotatef(90.0, 1.0, 0.0, 0.0);
-    glutSolidTorus(1.0, 3.0, 100, 100);
-    glRotatef(-90.0, 1.0, 0.0, 0.0);
-    glTranslatef(5.0, -1.0, 0.0);
-
-    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, materialColor3);
-
-    glDisable(GL_LIGHTING);
-
-    if (redSpotEnabled) {
-        glTranslatef(redSpotPos[0], redSpotPos[1], redSpotPos[2]);
-        glColor3f(lightColor0[0], lightColor0[1], lightColor0[2]);
-        glutSolidSphere(0.2, 20, 20);
-        glTranslatef(-redSpotPos[0], -redSpotPos[1], -redSpotPos[2]);
-    }
-
-    if (greenSpotEnabled) {
-        glTranslatef(greenSpotPos[0], greenSpotPos[1], greenSpotPos[2]);
-        glColor3f(lightColor1[0], lightColor1[1], lightColor1[2]);
-        glutSolidSphere(0.2, 20, 20);
-        glTranslatef(-greenSpotPos[0], -greenSpotPos[1], -greenSpotPos[2]);
-    }
-
-    if (blueSpotEnabled) {
-        glTranslatef(blueSpotPos[0], blueSpotPos[1], blueSpotPos[2]);
-        glColor3f(lightColor2[0], lightColor2[1], lightColor2[2]);
-        glutSolidSphere(0.2, 20, 20);
-        glTranslatef(-blueSpotPos[0], -blueSpotPos[1], -blueSpotPos[2]);
-    }
-    glColor3f(1.0, 1.0, 1.0);
-
-    glTranslatef(0.0, 2.0, 20.0); // not necesary, because nothing is drawn after
 
 
     ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
@@ -242,15 +155,10 @@ int main(int argc, char** argv)
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowPosition(500, 200);
     glutInitWindowSize(720, 720);
-    glutCreateWindow("Programowanie gier - zad 6 - oswietlenie");
+    glutCreateWindow("Programowanie gier - zad 7 - tekstury");
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-    glEnable(GL_LIGHT1);
-    glEnable(GL_LIGHT2);
-    glShadeModel(GL_SMOOTH);
-    glEnable(GL_NORMALIZE);
-    glDisable(GL_COLOR_MATERIAL);
+    glEnable(GL_TEXTURE_2D);
+    
 
     // specify callback functions
     glutDisplayFunc(display);
@@ -258,6 +166,19 @@ int main(int argc, char** argv)
     glutMouseFunc(mouse);
     glutMotionFunc(mouse_active_motion);
     glutTimerFunc(0, timer, 0);  // call timer function immediately
+
+
+    std::string s = "kostka.bmp";
+    std::wstring stemp = std::wstring(s.begin(), s.end());
+    LPCWSTR sw = stemp.c_str();
+
+    bool wczytano = LoadBitmapTex(sw, cube_texture);
+
+
+    std::string s2 = "trojkat.bmp";
+    std::wstring stemp2 = std::wstring(s2.begin(), s2.end());
+    LPCWSTR sw2 = stemp2.c_str();
+    bool wczytano2 = LoadBitmapTex(sw2, triangle_texture);
 
 
     // Setup ImGui
@@ -312,71 +233,48 @@ void timer(int)
     glutTimerFunc(1000 / 60, timer, 0);  // calls itself to keep 60 FPS
 
 
-    if (!redSpotEnabled) {
-        glDisable(GL_LIGHT0);
-    }
-    else {
-        glEnable(GL_LIGHT0);
-        if (redSpotAutoMove) {
-            redSpotPos[0] = 10 * cosf(redT);
-            redSpotPos[2] = 10 * sinf(redT);
-            redT += 0.01;
-        }
-        if (redSpotLockOnCenter) {
-            redSpotDirection[0] = -redSpotPos[0];
-            redSpotDirection[1] = -redSpotPos[1];
-            redSpotDirection[2] = -redSpotPos[2];
-
-            float len = sqrtf(redSpotDirection[0] * redSpotDirection[0] + redSpotDirection[1] * redSpotDirection[1] + redSpotDirection[2] * redSpotDirection[2]);
-            redSpotDirection[0] /= len;
-            redSpotDirection[1] /= len;
-            redSpotDirection[2] /= len;
+    for (int i = 0; i < 3; i++) {
+        if (cube_rotation_bool[i]) {
+            cube_rotation[i] += cube_rotation_speed;
+            if (cube_rotation[i] > 360.0)
+                cube_rotation[i] -= 360.0;
         }
     }
+}
 
-    if (!greenSpotEnabled) {
-        glDisable(GL_LIGHT1);
-    } 
-    else{
-        glEnable(GL_LIGHT1);
-        if (greenSpotAutoMove) {
-            greenSpotPos[0] = 10 * cosf(greenT + 3.1415);
-            greenSpotPos[2] = 10 * sinf(greenT + 3.1515);
-            greenT += 0.01;
-        }
-        if (greenSpotLockOnCenter) {
-            greenSpotDirection[0] = -greenSpotPos[0];
-            greenSpotDirection[1] = -greenSpotPos[1];
-            greenSpotDirection[2] = -greenSpotPos[2];
 
-            float len2 = sqrtf(greenSpotDirection[0] * greenSpotDirection[0] + greenSpotDirection[1] * greenSpotDirection[1] + greenSpotDirection[2] * greenSpotDirection[2]);
-            greenSpotDirection[0] /= len2;
-            greenSpotDirection[1] /= len2;
-            greenSpotDirection[2] /= len2;
-        }
+bool LoadBitmapTex(LPCWSTR szFileName, GLuint& texid)
+{
+    HBITMAP hBMP;//uchwyt do bitmapy
+    BITMAP BMP;//struktura opisujaca parametry bitmapy, wingdi.h, tez jest tu np BITMAPINFOHEADER
+    //wczytaj bitmape, parametr tworzacy sekcje DIB kolokwialnie "tablice z pixelami"
+    hBMP = (HBITMAP)LoadImage(GetModuleHandle(NULL), szFileName, IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION | LR_LOADFROMFILE);
+
+    if (!hBMP)
+    {
+        return FALSE;
     }
-
-    if (!blueSpotEnabled) {
-        glDisable(GL_LIGHT2);
+    //pobierz informacje o obiekcie bitmapy, zapisane dane do struktury
+    GetObject(hBMP, sizeof(BMP), &BMP);
+    //wygeneruj teksture
+    glGenTextures(1, &texid);
+    //ustaw pwyrownanie struktury na 4 (slowo)
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    //zbinduj jako teksture 2D
+    glBindTexture(GL_TEXTURE_2D, texid);
+    //W jaki sposb powinna skalowac sie tekstura
+    //generalnie tekstury maja rozmiary potegi 2, patrz mipmapy
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    if (BMP.bmBitsPixel != 24)//musi byc bitmapa 24bit per pixel
+    {
+        DeleteObject(hBMP);
+        return FALSE;
     }
-    else {
-        glEnable(GL_LIGHT2);
-        if (blueSpotAutoMove) {
-            blueSpotPos[0] = 10 * cosf(blueT);
-            blueSpotPos[2] = 10 * sinf(blueT);
-            blueT += 0.01;
-        }
-        if (blueSpotLockOnCenter) {
-            blueSpotDirection[0] = -blueSpotPos[0];
-            blueSpotDirection[1] = -blueSpotPos[1];
-            blueSpotDirection[2] = -blueSpotPos[2];
-
-            float len3 = sqrtf(blueSpotDirection[0] * blueSpotDirection[0] + blueSpotDirection[1] * blueSpotDirection[1] + blueSpotDirection[2] * blueSpotDirection[2]);
-            blueSpotDirection[0] /= len3;
-            blueSpotDirection[1] /= len3;
-            blueSpotDirection[2] /= len3;
-        }
-    }
-
+    //Dolacz bitmape do tekstury
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, BMP.bmWidth, BMP.bmHeight, 0, GL_BGR_EXT, GL_UNSIGNED_BYTE, BMP.bmBits);
+    //usun bitmape z pamieci
+    DeleteObject(hBMP);
+    return TRUE;
 }
 

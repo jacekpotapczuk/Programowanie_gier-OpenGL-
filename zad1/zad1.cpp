@@ -1,10 +1,6 @@
 ﻿#define GLEW_STATIC
 #include <GL/glew.h>  // pierwsza,inaczej moga byc GLchar udefined etc.
 
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_glut.h"
-#include "imgui/imgui_impl_opengl2.h"
-
 #include <GL/freeglut.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
@@ -12,7 +8,6 @@
 
 #include <iostream>
 
-void imgui_display();
 void display();
 void reshape(int, int);
 void timer(int);
@@ -22,44 +17,15 @@ void mouse_active_motion(int, int);
 
 float loc_color_r;
 
-void imgui_display()
-{
-    {
-        ImGui::Begin("Sterowanie");   
-
-
-        ImGui::Separator();
-        ImGui::Text("Aktualnie: %.1f FPS", ImGui::GetIO().Framerate);
-        ImGui::End();
-    }
-}
 
 void display()
 {
-    // Start ImGui frame
-    ImGui_ImplOpenGL2_NewFrame();
-    ImGui_ImplGLUT_NewFrame();
 
-    imgui_display();
-
-    // ImGui rendering
-    ImGui::Render();
-    ImGuiIO& io = ImGui::GetIO();
-
-    //glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-
-    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  // frame buffer flag
-    //glClearColor(0.0, 0.0, 0.0, 1.0);
-    //glLoadIdentity();  //  clears any transformations of current matrix (in this place its modelview) 
-
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.0f, 0.1f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     glDrawArrays(GL_TRIANGLES, 0, 3);
+    //std::cout << "dispay" << std::endl;
 
-
-
-
-    ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
     glutSwapBuffers();
 }
 
@@ -73,8 +39,6 @@ int main(int argc, char** argv)
     glutInitWindowPosition(500, 200);
     glutInitWindowSize(720, 720);
     glutCreateWindow("Programowanie gier - zad 7 - tekstury");
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_TEXTURE_2D);
 
 
     glewExperimental = GL_TRUE;
@@ -112,7 +76,7 @@ int main(int argc, char** argv)
         "uniform float r_color;"
         "void main()"
         "{"
-        " out_color = vec4(r_color,0.0,0.0, 1.0);"
+        " out_color = vec4(r_color,0.5,0.5, 1.0);"
         "}";
 
     // Utworz i skompiluja vertex shader
@@ -164,7 +128,7 @@ int main(int argc, char** argv)
     );
 
     loc_color_r = glGetUniformLocation(shaderProgram, "r_color");
-    glUniform1f(loc_color_r, 1.0);
+    glUniform1f(loc_color_r, 5.0);
 
     // specify callback functions
     glutDisplayFunc(display);
@@ -173,60 +137,32 @@ int main(int argc, char** argv)
     glutMotionFunc(mouse_active_motion);
     glutTimerFunc(0, timer, 0);  // call timer function immediately
 
-
-
-      // Setup ImGui
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-
-    ImGui::StyleColorsDark();
-
-    ImGui_ImplGLUT_Init();
-    ImGui_ImplGLUT_InstallFuncs();
-    ImGui_ImplOpenGL2_Init();
-
-
-
     glutMainLoop();
 
 
-    // Imgui cleanup
-    ImGui_ImplOpenGL2_Shutdown();
-    ImGui_ImplGLUT_Shutdown();
-    ImGui::DestroyContext();
-
+    glDeleteProgram(shaderProgram);
+    glDeleteShader(fragmentShader);
+    glDeleteShader(vertexShader);
+    glDeleteBuffers(1, &vbo);
+    glDeleteVertexArrays(1, &vao);
     return 0;
 }
 
 void mouse(int button, int state, int x, int y) {
-    ImGui_ImplGLUT_MouseFunc(button, state, x, y);  // call imgui mouse callback function
+ 
 }
 
 void mouse_active_motion(int x, int y) {
-    ImGui_ImplGLUT_MotionFunc(x, y); // imgui mouse callback function
-
+  
 }
 
 void reshape(int w, int h) // called at the start and whenever window is reshaped
 {
-    ImGui_ImplGLUT_ReshapeFunc(w, h); // call imgui reshape callback function
-
-    // viewport settings
     glViewport(0, 0, w, h);  // adjust viewport to always match the whole window
-
-    //glMatrixMode(GL_PROJECTION);
-    //glLoadIdentity();
-    ////gluPerspective(60.0, 1.0, 0.1, 100.0);
-    //gluOrtho2D(-10.0, 10.0, -10.0, 10.9);
-    //glMatrixMode(GL_MODELVIEW);
 }
 
 void timer(int)
 {
     glutPostRedisplay();  // call display function
     glutTimerFunc(1000 / 60, timer, 0);  // calls itself to keep 60 FPS
-
-
 }

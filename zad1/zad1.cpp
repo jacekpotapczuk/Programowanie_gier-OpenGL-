@@ -7,38 +7,130 @@
 
 
 #include <iostream>
+#include <fstream>
+#include <string>
+#include <sstream>
 
 void display();
 void reshape(int, int);
 void timer(int);
 void mouse(int, int, int, int);
 void mouse_active_motion(int, int);
+void DrawCube(GLfloat, GLfloat, GLfloat, GLfloat);
 
 
-float loc_color_r;
+int color_loc;
 
+GLuint shader;
+float angle_x = 0.0;
+float angle_y = 0.0;
+float angle_z = 0.0;
+
+
+static GLuint CompileShader(GLuint type, const std::string& source) {
+
+    GLuint id = glCreateShader(type);
+    const char* src = source.c_str();
+    glShaderSource(id, 1, &src, nullptr);
+    glCompileShader(id);
+
+
+    GLint isCompiled = 0;
+    glGetShaderiv(id, GL_COMPILE_STATUS, &isCompiled);
+    if (isCompiled == GL_FALSE)
+    {
+        GLint maxLength = 0;
+        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &maxLength);
+        GLchar* errorLog = (GLchar*)malloc(maxLength * sizeof(GLchar));
+        glGetShaderInfoLog(id, maxLength, &maxLength, errorLog);
+        std::cout << "Failed to compile shader" << std::endl;
+        std::cout << errorLog << std::endl;
+
+        free(errorLog);
+        glDeleteShader(id);
+        getchar();
+        return 0;
+    }
+    return id;
+}
+
+static GLuint CreateShader(const std::string& vertexShader, const std::string& fragmentShader) {
+
+    GLuint program = glCreateProgram();
+    GLuint vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
+    GLuint fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
+
+    glAttachShader(program, vs);
+    glAttachShader(program, fs);
+
+    glLinkProgram(program);
+    glValidateProgram(program);
+
+
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+
+    return program;
+}
+
+struct ShaderProgramSource {
+    std::string VertexSource;
+    std::string FragmentSource;
+};
+
+static ShaderProgramSource ParseShader(const std::string& filepath) {
+
+    enum class ShaderType {
+        NONE = -1, VERTEX = 0, FRAGMENT = 1
+    };
+    std::ifstream stream(filepath);
+    std::string line;
+    std::stringstream ss[2];
+    ShaderType type = ShaderType::NONE;
+
+    while (getline(stream, line)) {
+
+        if (line.find("#shader") != std::string::npos) {
+            if (line.find("vertex") != std::string::npos) {
+                type = ShaderType::VERTEX;
+            }
+            else if (line.find("fragment") != std::string::npos) {
+                type = ShaderType::FRAGMENT;
+            }
+        }
+        else {
+            ss[(int)type] << line << "\n";
+        }
+    }
+    return { ss[0].str(), ss[1].str() };
+}
 
 void display()
 {
 
-    glClearColor(0.0f, 0.1f, 0.0f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    //glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
     //std::cout << "dispay" << std::endl;
-
+  /*  glPushMatrix();
+    glRotatef(angle, 0.0, 1.0, 0.0);
+    std::cout << angle << std::endl;
+    DrawCube(0.0, 0.0, 0.0, 0.5);
+    glPopMatrix();*/
     glutSwapBuffers();
 }
 
 
 int main(int argc, char** argv)
 {
-    // Create GLUT window,
+    // docs.GL - czytelna dokumentacja
     glutInit(&argc, argv);
     glutInitContextVersion(2, 1); // open gl version
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowPosition(500, 200);
     glutInitWindowSize(720, 720);
-    glutCreateWindow("Programowanie gier - zad 7 - tekstury");
+    glutCreateWindow("Programowanie gier - zad 8 - modern pipeline");
 
 
     glewExperimental = GL_TRUE;
@@ -49,86 +141,93 @@ int main(int argc, char** argv)
         return 0;
     }
 
+    // todo: dowiedziec sie co to i po co to
     GLuint vao;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-
-    GLuint vbo;
+    GLuint vbo; // vertex buffer - przechowuje dane o obiektach ktore rysujemy, jest to odnosnik do miejsca gdzie sa one przechowywane na GPU
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-    static const GLfloat triangle_vertex[] = {-1.0f, -1.0f, 0.0f,
-                                              1.0f, -1.0f, 0.0f,
-                                              0.0f, 1.0f, 0.0f,};
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle_vertex), triangle_vertex, GL_STATIC_DRAW);
-
-    const GLchar* simply_vertex_shader =
-        "#version 150\n"
-        "in vec3 position;"
-        "void main()"
-        "{"
-        " gl_Position = vec4(position,1);"
-        "}";
-    const GLchar* simply_fragment_shader =
-        "#version 150 core\n"
-        "out vec4 out_color;"
-        "uniform float r_color;"
-        "void main()"
-        "{"
-        " out_color = vec4(r_color,0.5,0.5, 1.0);"
-        "}";
-
-    // Utworz i skompiluja vertex shader
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &simply_vertex_shader, NULL);
-    glCompileShader(vertexShader);
-
-    GLint isCompiled = 0;
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &isCompiled);
-    if (isCompiled == GL_FALSE)
-    {
-        GLint maxLength = 0;
-        glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &maxLength);
-        GLchar* errorLog = (GLchar*)malloc(maxLength * sizeof(GLchar));
-        glGetShaderInfoLog(vertexShader, maxLength, &maxLength, errorLog);
-        printf(errorLog);
-        free(errorLog);
-        glDeleteShader(vertexShader);
-        getchar();
-        return 0;
-    }
-
-    // Utworz i skompiluja fragment shader
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &simply_fragment_shader, NULL);
-    glCompileShader(fragmentShader);
+    static const GLfloat positions[] = {-0.5f, -0.5f, 0.0f,
+                                         0.5f, -0.5f, 0.0f,
+                                         0.5f,  0.5f, 0.0f,
+                                        -0.5f,  0.5f, 0.0f};
+    glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
 
 
-    // podlinkowanie shaderow do programu shaderow (utworzonego)
-    GLuint shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    // Dobindowanie zmiennej out_color dla shadera
-    glBindFragDataLocation(shaderProgram, 0, "out_color");
-    glLinkProgram(shaderProgram); // linkowanie
-    glUseProgram(shaderProgram); // uzycie
+    GLuint indices[] = {
+        0, 1, 2,
+        2, 3, 0
+    };
 
-    GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
+    GLuint ibo; // index buffer
+    glGenBuffers(1, &ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+
+
+    ShaderProgramSource source = ParseShader("shaders/Basic.shader");
+
+    // vertex shader - called for each vertex, used to tell where you want it to be on the screen, it's called before fragment shader
+    // fragment shader - called for each pixel that needs to be rasterized (drawn on screen), primally it's used to determine color of each pixel
+
+    shader = CreateShader(source.VertexSource, source.FragmentSource);
+    glUseProgram(shader);
+
+
+    GLint posAttrib = glGetAttribLocation(shader, "position");
     //odblokowanie atrybutow
     glEnableVertexAttribArray(posAttrib);
-    //ustawienie atrybutow
-    glVertexAttribPointer(
-        posAttrib, //pozycja
-        3, //rozmiar elementow dla kazdego wierzcholka
-        GL_FLOAT, //typ
-        GL_FALSE,//czy znormalizowany
-        0,//"stride" w przypadku gdy zero oznacza, że mamy ciągla upakowana tablice
-        0//wskaznik do pierwszego atrybutu, jeśli zero to od początku (domyslnie)
+
+    glVertexAttribPointer(  // definiuje jak ulozone sa dane w naszych wierzcholkach
+        posAttrib,      // pozycja atrybutu
+        3,              // rozmiar elementow dla kazdego wierzcholka  (ilosc elementow musi byc jedno z 1,2,3,4)
+        GL_FLOAT,       // typ
+        GL_FALSE,       // czy znormalizowany (blad? - wedlug dokumentacji na odwrot - czy dane maja byc znormalizowane)
+        0,              // "stride" w przypadku gdy zero oznacza, że mamy ciągla upakowana tablice (ilosc bajtow na kazdy wierzcholek, zamiast 0 mozna uzyc np sizeof(float)*3)
+        0               // wskaznik do pierwszego atrybutu, jeśli zero to od początku (ile bajtow musimy sie przesunac do wskazanego atrybutu)
     );
 
-    loc_color_r = glGetUniformLocation(shaderProgram, "r_color");
-    glUniform1f(loc_color_r, 5.0);
+    color_loc = glGetUniformLocation(shader, "u_color");
+    glUniform4f(color_loc, 0.8, 0.2, 0.8, 1.0);
+
+
+    float model_matrix[16] = { 3.0, 0.0, 0.0, 0.0,
+                               0.0, 3.0, 0.0, 0.0,
+                               0.0, 0.0, 3.0, 0.0,
+                               0.0, 0.0, 0.0, 1.0 };
+
+
+    float view_matrix[16] = { 1.0, 0.0, 0.0, 0.0, // nie uzywam kamery, ale w razie potrzeby jest taka mozliwosc
+                              0.0, 1.0, 0.0, 0.0,
+                              0.0, 0.0, 1.0, 0.0,
+                              0.0, 0.0, 0.0, 1.0 };
+
+    // orthographic projection
+    float r = 10.0;   // right
+    float l = -10.0;  // left
+    float b = -10.0;  // bottom
+    float t = 10.0;   // top
+    float f = 100.0;  // far
+    float n = 0.1;    // near
+
+    float projection_matrix[16] = { 2.0 / (r - l), 0.0, 0.0, -(r + l)/(r - l),
+                                    0.0, 2.0 / (t - b), 0.0, -(t + b) / (t - b),
+                                    0.0, 0.0, -2.0 / (f - n), -(f + n) / (f - n),
+                                    0.0, 0.0, 0.0, 1.0 };
+
+    int loc_model = glGetUniformLocation(shader, "u_model_matrix");
+    int loc_view = glGetUniformLocation(shader, "u_view_matrix");
+    int loc_projection = glGetUniformLocation(shader, "u_projection_matrix");
+
+
+    glUniformMatrix4fv(loc_model, 1, GL_FALSE, model_matrix);
+    glUniformMatrix4fv(loc_view, 1, GL_FALSE, view_matrix);
+    glUniformMatrix4fv(loc_projection, 1, GL_FALSE, projection_matrix);
+
 
     // specify callback functions
     glutDisplayFunc(display);
@@ -140,9 +239,8 @@ int main(int argc, char** argv)
     glutMainLoop();
 
 
-    glDeleteProgram(shaderProgram);
-    glDeleteShader(fragmentShader);
-    glDeleteShader(vertexShader);
+    glDeleteProgram(shader);
+
     glDeleteBuffers(1, &vbo);
     glDeleteVertexArrays(1, &vao);
     return 0;
@@ -165,4 +263,85 @@ void timer(int)
 {
     glutPostRedisplay();  // call display function
     glutTimerFunc(1000 / 60, timer, 0);  // calls itself to keep 60 FPS
+
+    angle_x += 0.01;
+
+    float rotate_x_matrix[16] = { 1.0, 0.0, 0.0, 0.0,
+                                  0.0, cosf(angle_x), -sinf(angle_x), 0.0,
+                                  0.0, sinf(angle_x), cosf(angle_x), 0.0,
+                                  0.0, 0.0, 0.0, 1.0 };
+
+    float rotate_y_matrix[16] = { cosf(angle_y), 0.0, -sinf(angle_y), 0.0,
+                              0.0, 1.0, 0.0, 0.0,
+                              sinf(angle_y), 0.0, cosf(angle_y), 0.0,
+                              0.0, 0.0, 0.0, 1.0 };
+
+    float rotate_z_matrix[16] = { cosf(angle_z), -sinf(angle_z), 0.0, 0.0,
+                                  sinf(angle_z), cosf(angle_z), 0.0, 0.0,
+                                  0.0, 0.0, 1.0, 0.0,
+                                  0.0, 0.0, 0.0, 1.0 };
+
+    int loc_rotate_x = glGetUniformLocation(shader, "u_rotate_x_matrix");
+    glUniformMatrix4fv(loc_rotate_x, 1, GL_FALSE, rotate_x_matrix);
+
+    int loc_rotate_y = glGetUniformLocation(shader, "u_rotate_y_matrix");
+    glUniformMatrix4fv(loc_rotate_y, 1, GL_FALSE, rotate_y_matrix);
+
+    int loc_rotate_z = glGetUniformLocation(shader, "u_rotate_z_matrix");
+    glUniformMatrix4fv(loc_rotate_z, 1, GL_FALSE, rotate_z_matrix);
+
+}
+
+
+void DrawCube(GLfloat centerPosX, GLfloat centerPosY, GLfloat centerPosZ, GLfloat edgeLength)
+{
+    GLfloat halfSideLength = edgeLength * 0.5f;
+
+    GLfloat vertices[] =
+    {
+        // front face
+        centerPosX - halfSideLength, centerPosY + halfSideLength, centerPosZ + halfSideLength, // top left
+        centerPosX + halfSideLength, centerPosY + halfSideLength, centerPosZ + halfSideLength, // top right
+        centerPosX + halfSideLength, centerPosY - halfSideLength, centerPosZ + halfSideLength, // bottom right
+        centerPosX - halfSideLength, centerPosY - halfSideLength, centerPosZ + halfSideLength, // bottom left
+
+        // back face
+        centerPosX - halfSideLength, centerPosY + halfSideLength, centerPosZ - halfSideLength, // top left
+        centerPosX + halfSideLength, centerPosY + halfSideLength, centerPosZ - halfSideLength, // top right
+        centerPosX + halfSideLength, centerPosY - halfSideLength, centerPosZ - halfSideLength, // bottom right
+        centerPosX - halfSideLength, centerPosY - halfSideLength, centerPosZ - halfSideLength, // bottom left
+
+        // left face
+        centerPosX - halfSideLength, centerPosY + halfSideLength, centerPosZ + halfSideLength, // top left
+        centerPosX - halfSideLength, centerPosY + halfSideLength, centerPosZ - halfSideLength, // top right
+        centerPosX - halfSideLength, centerPosY - halfSideLength, centerPosZ - halfSideLength, // bottom right
+        centerPosX - halfSideLength, centerPosY - halfSideLength, centerPosZ + halfSideLength, // bottom left
+
+        // right face
+        centerPosX + halfSideLength, centerPosY + halfSideLength, centerPosZ + halfSideLength, // top left
+        centerPosX + halfSideLength, centerPosY + halfSideLength, centerPosZ - halfSideLength, // top right
+        centerPosX + halfSideLength, centerPosY - halfSideLength, centerPosZ - halfSideLength, // bottom right
+        centerPosX + halfSideLength, centerPosY - halfSideLength, centerPosZ + halfSideLength, // bottom left
+
+        // top face
+        centerPosX - halfSideLength, centerPosY + halfSideLength, centerPosZ + halfSideLength, // top left
+        centerPosX - halfSideLength, centerPosY + halfSideLength, centerPosZ - halfSideLength, // top right
+        centerPosX + halfSideLength, centerPosY + halfSideLength, centerPosZ - halfSideLength, // bottom right
+        centerPosX + halfSideLength, centerPosY + halfSideLength, centerPosZ + halfSideLength, // bottom left
+
+        // top face
+        centerPosX - halfSideLength, centerPosY - halfSideLength, centerPosZ + halfSideLength, // top left
+        centerPosX - halfSideLength, centerPosY - halfSideLength, centerPosZ - halfSideLength, // top right
+        centerPosX + halfSideLength, centerPosY - halfSideLength, centerPosZ - halfSideLength, // bottom right
+        centerPosX + halfSideLength, centerPosY - halfSideLength, centerPosZ + halfSideLength  // bottom left
+    };
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //glColor3f( colour[0], colour[1], colour[2] );
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(3, GL_FLOAT, 0, vertices);
+
+    glDrawArrays(GL_QUADS, 0, 24);
+
+    glDisableClientState(GL_VERTEX_ARRAY);
 }

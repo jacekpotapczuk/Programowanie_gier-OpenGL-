@@ -1,1 +1,1 @@
-Zajęcia z programowanie gier
+Zajęcia z programowania gier

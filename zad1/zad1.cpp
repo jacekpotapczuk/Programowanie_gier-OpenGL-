@@ -108,16 +108,15 @@ static ShaderProgramSource ParseShader(const std::string& filepath) {
 void display()
 {
 
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     //glDrawArrays(GL_TRIANGLES, 0, 3);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-    //std::cout << "dispay" << std::endl;
-  /*  glPushMatrix();
-    glRotatef(angle, 0.0, 1.0, 0.0);
-    std::cout << angle << std::endl;
-    DrawCube(0.0, 0.0, 0.0, 0.5);
-    glPopMatrix();*/
+
+  /*  glDrawElements(GL_TRIANGLES, 12 * 3 , GL_UNSIGNED_INT, nullptr);
+    */
+    glDrawArrays(GL_TRIANGLES, 0, 12 * 3);
+    //DrawCube(0.0, 0.0, 0.0, 1.0);
+
     glutSwapBuffers();
 }
 
@@ -131,7 +130,8 @@ int main(int argc, char** argv)
     glutInitWindowPosition(500, 200);
     glutInitWindowSize(720, 720);
     glutCreateWindow("Programowanie gier - zad 8 - modern pipeline");
-
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
 
     glewExperimental = GL_TRUE;
     GLenum err = glewInit();
@@ -150,23 +150,122 @@ int main(int argc, char** argv)
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-    static const GLfloat positions[] = {-0.5f, -0.5f, 0.0f,
-                                         0.5f, -0.5f, 0.0f,
-                                         0.5f,  0.5f, 0.0f,
-                                        -0.5f,  0.5f, 0.0f};
-    glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
+    //static const GLfloat positions[] = { 0.0f, 0.0f, 0.0f,
+    //                                     1.0f, 0.0f, 0.0f,
+    //                                     1.0f, 1.0f, 0.0f,
+    //                                     0.0f, 1.0f, 0.0f,
+    //                                     0.0f, 0.0f, -1.0f,
+    //                                     1.0f, 0.0f, -1.0f,
+    //                                     1.0f, 1.0f, -1.0f,
+    //                                     0.0f, 1.0f, -1.0f };
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
+    //GLuint indices[] = {
+    //    0, 1, 2,
+    //    0, 2, 3,
+    //    3, 2, 6,
+    //    3, 6, 7,
+    //    1, 5, 6,
+    //    1, 6, 2,
+    //    5, 4, 7,
+    //    5, 7, 6,
+    //    0, 4, 3,
+    //    4, 7, 3,
+    //    1, 5, 7,
+    //    1, 4, 0
+    //};
 
-
-    GLuint indices[] = {
-        0, 1, 2,
-        2, 3, 0
+    //GLuint ibo; // index buffer
+    //glGenBuffers(1, &ibo);
+    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    static const GLfloat g_vertex_buffer_data[] = {
+    -1.0f,-1.0f,-1.0f, // triangle 1 : begin
+    -1.0f,-1.0f, 1.0f,
+    -1.0f, 1.0f, 1.0f, // triangle 1 : end
+    1.0f, 1.0f,-1.0f, // triangle 2 : begin
+    -1.0f,-1.0f,-1.0f,
+    -1.0f, 1.0f,-1.0f, // triangle 2 : end
+    1.0f,-1.0f, 1.0f,
+    -1.0f,-1.0f,-1.0f,
+    1.0f,-1.0f,-1.0f,
+    1.0f, 1.0f,-1.0f,
+    1.0f,-1.0f,-1.0f,
+    -1.0f,-1.0f,-1.0f,
+    -1.0f,-1.0f,-1.0f,
+    -1.0f, 1.0f, 1.0f,
+    -1.0f, 1.0f,-1.0f,
+    1.0f,-1.0f, 1.0f,
+    -1.0f,-1.0f, 1.0f,
+    -1.0f,-1.0f,-1.0f,
+    -1.0f, 1.0f, 1.0f,
+    -1.0f,-1.0f, 1.0f,
+    1.0f,-1.0f, 1.0f,
+    1.0f, 1.0f, 1.0f,
+    1.0f,-1.0f,-1.0f,
+    1.0f, 1.0f,-1.0f,
+    1.0f,-1.0f,-1.0f,
+    1.0f, 1.0f, 1.0f,
+    1.0f,-1.0f, 1.0f,
+    1.0f, 1.0f, 1.0f,
+    1.0f, 1.0f,-1.0f,
+    -1.0f, 1.0f,-1.0f,
+    1.0f, 1.0f, 1.0f,
+    -1.0f, 1.0f,-1.0f,
+    -1.0f, 1.0f, 1.0f,
+    1.0f, 1.0f, 1.0f,
+    -1.0f, 1.0f, 1.0f,
+    1.0f,-1.0f, 1.0f
     };
 
-    GLuint ibo; // index buffer
-    glGenBuffers(1, &ibo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    GLuint vertexBuffer;
+    glGenBuffers(1, &vertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
 
+    static const GLfloat g_color_buffer_data[] = {
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f,
+1.0f, 1.0f, 1.0f
+    };
+
+    //GLuint colorbuffer;
+    //glGenBuffers(1, &colorbuffer);
+    //glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(g_color_buffer_data), g_color_buffer_data, GL_STATIC_DRAW);
+    //glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
 
 
     ShaderProgramSource source = ParseShader("shaders/Basic.shader");
@@ -179,8 +278,10 @@ int main(int argc, char** argv)
 
 
     GLint posAttrib = glGetAttribLocation(shader, "position");
+    GLint colorAttrib = glGetAttribLocation(shader, "vertexColor");
     //odblokowanie atrybutow
     glEnableVertexAttribArray(posAttrib);
+    glEnableVertexAttribArray(colorAttrib);
 
     glVertexAttribPointer(  // definiuje jak ulozone sa dane w naszych wierzcholkach
         posAttrib,      // pozycja atrybutu
@@ -191,14 +292,23 @@ int main(int argc, char** argv)
         0               // wskaznik do pierwszego atrybutu, jeśli zero to od początku (ile bajtow musimy sie przesunac do wskazanego atrybutu)
     );
 
+    glVertexAttribPointer(
+        colorAttrib,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+        3,                                // size
+        GL_FLOAT,                         // type
+        GL_FALSE,                         // normalized?
+        0,                                // stride
+        (void*)0                          // array buffer offset
+    );
+
     color_loc = glGetUniformLocation(shader, "u_color");
     glUniform4f(color_loc, 0.8, 0.2, 0.8, 1.0);
 
 
-    float model_matrix[16] = { 3.0, 0.0, 0.0, 0.0,
-                               0.0, 3.0, 0.0, 0.0,
-                               0.0, 0.0, 3.0, 0.0,
-                               0.0, 0.0, 0.0, 1.0 };
+    float model_matrix[16] = { 4.0, 0.0, 0.0, 0.0,
+                               0.0, 2.0, 0.0, 0.0,
+                               0.0, 0.0, 1.0, 0.0,
+                               -0.5, -0.5, -1.0, 1.0 };
 
 
     float view_matrix[16] = { 1.0, 0.0, 0.0, 0.0, // nie uzywam kamery, ale w razie potrzeby jest taka mozliwosc
@@ -265,6 +375,8 @@ void timer(int)
     glutTimerFunc(1000 / 60, timer, 0);  // calls itself to keep 60 FPS
 
     angle_x += 0.01;
+    angle_y += 0.02;
+    angle_z -= 0.015;
 
     float rotate_x_matrix[16] = { 1.0, 0.0, 0.0, 0.0,
                                   0.0, cosf(angle_x), -sinf(angle_x), 0.0,
@@ -336,7 +448,7 @@ void DrawCube(GLfloat centerPosX, GLfloat centerPosY, GLfloat centerPosZ, GLfloa
         centerPosX + halfSideLength, centerPosY - halfSideLength, centerPosZ + halfSideLength  // bottom left
     };
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     //glColor3f( colour[0], colour[1], colour[2] );
     glEnableClientState(GL_VERTEX_ARRAY);
     glVertexPointer(3, GL_FLOAT, 0, vertices);
